@@ -7,7 +7,7 @@ on:
     branches: [ "master" ]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -15,11 +15,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: true
 
-    - name: Set up Python 3.9
+    - name: Set up Python 3
       uses: actions/setup-python@v3
       with:
-        python-version: "3.9"
+        python-version: "3.9.2"
 
     - name: Install dependencies
       run: |
@@ -29,3 +31,14 @@ jobs:
     - name: Run Yahoo Scraper main.py
       run: |
         python src/edu_pad/main.py
+
+    - name: Commit and push results
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+        git add src/edu_pad/static/db/yahoo_data.db
+        git add src/edu_pad/static/csv/yahoo_data.csv
+
+        git commit -m "🤖 Auto-update: Datos generados por scraping [skip ci]" || echo "No hay cambios para commitear"
+        git push origin master
