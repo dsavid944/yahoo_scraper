@@ -4,9 +4,6 @@ import os
 from datetime import datetime
 
 class DataBase:
-    def __init__(self):
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        self.rutadb = os.path.join(base_dir, "static", "db", "yahoo_data.db")
 
     # Funcion para guarda la informacion
     def guardar_df(self, df, nombre_tabla="yahoo_scraper"):
