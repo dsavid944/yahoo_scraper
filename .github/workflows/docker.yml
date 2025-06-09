@@ -1,0 +1,50 @@
+name: CI/CD Docker Scraper
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: V1 – Checkout repo
+      uses: actions/checkout@v4
+
+    - name: V2 – Login a Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+    - name: V3 – Construir imagen docker
+      run: |
+        docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/yahoo_scraper:latest .
+
+    - name: V4 – Ejecutar scraping desde el contenedor
+      run: |
+        docker run --rm \
+          -v "${{ github.workspace }}/src/edu_pad/static/csv":/app/src/edu_pad/static/csv \
+          -v "${{ github.workspace }}/src/edu_pad/static/db":/app/src/edu_pad/static/db \
+          ${{ secrets.DOCKER_HUB_USERNAME }}/yahoo_scraper:latest
+
+    - name: V5 – Subir artefactos generados
+      uses: actions/upload-artifact@v4
+      with:
+        name: scraped-data
+        path: |
+          src/edu_pad/static/csv/yahoo_data.csv
+          src/edu_pad/static/db/yahoo_data.db
+
+    - name: V6 – Commit y push de resultados
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git add src/edu_pad/static/csv/yahoo_data.csv
+        git add src/edu_pad/static/db/yahoo_data.db
+        git commit -m "🤖 Auto-update: Datos traídos por Docker [skip ci]" || echo "🚫 No hay cambios para commitear"
+        git push origin main
